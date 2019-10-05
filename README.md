@@ -18,4 +18,11 @@ Prod:
 
 Go to http://localhost:8000/order
 
+Docker:
+
+`docker build -t <your-namespace>/order_app  .`
+
+`docker run -p 8000:8000 --rm <your-namespace>/order_app`
+
+Go to http://localhost:8000/order
 
