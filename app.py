@@ -1,12 +1,20 @@
 import os
 import boto3
+import epsagon
 import json
 import logging
 import watchtower
 
 from flask import Flask, request, abort
 
+epsagon.init(
+    token=os.environ.get('EPSAGON_KEY'),
+    app_name='order_app',
+    metadata_only=False
+)
+
 app = Flask(__name__)
+epsagon.flask_wrapper(app)
 
 sns = boto3.client(
     'sns',
@@ -39,7 +47,7 @@ def order():
 
     try:
         sns.publish(
-            TopicArn='arn:aws:sns:us-east-2:624102251302:eps63_orders',    
+            TopicArn=os.environ.get('APP_TOPIC'),
             Message=json.dumps(order_payload),    
         )
         return 'Your Order is being processed', 200
