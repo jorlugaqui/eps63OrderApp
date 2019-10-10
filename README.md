@@ -1,14 +1,23 @@
-**Orders API**
+# Orders API
 
-This is a very small API (one endpoint) written with Flask framework, for academic purposes. 
+The **eps63_order_app** is a very small API (one endpoint) written with the Flask Framework (Python 3.7). The `/order` endpoint receives an order´s payload and it publishes a message on a SNS topic, so that a consumer can process the request later on.
 
-The `/order` endpoint will enqueue a task in Kafka for processing a custmer's order.
+## How to run it?
 
-*How to run it*
+### Requirements
 
-Local:
+1. AWS credentials.
+2. SNS topic already created.
+3. An email´s subscription to the topic.
+4. Epsagon Key.
 
-`AWS_ACCESS_KEY=<your_aws_access_key> AWS_SECRET_ACCESS_KEY=<your_aws_secret_key> APP_TOPIC=<sns_topic> EPSAGON_KEY=<your_epsagon_key> FLASK_APP=app.py flask run`
+### Virtual environment - Local - Flask development server
+
+1. `pip install virtualenv`
+2. `virtualenv env --python=python3.7`
+3. `source env/bin/activate`
+4. `pip install -r requirements.txt`
+5. `AWS_ACCESS_KEY=<your_aws_access_key> AWS_SECRET_ACCESS_KEY=<your_aws_secret_key> APP_TOPIC=<sns_topic> EPSAGON_KEY=<your_epsagon_key> FLASK_APP=app.py flask run`
 
 POST http://localhost:5000/order
 
@@ -19,26 +28,13 @@ POST http://localhost:5000/order
  "amount": 400
 }
 `
+### Virtual environment - Local - Gunicorn
 
-Prod:
-
-`AWS_ACCESS_KEY=<your_aws_access_key> AWS_SECRET_ACCESS_KEY=<your_aws_secret_key> APP_TOPIC=<sns_topic> EPSAGON_KEY=<your_epsagon_key> gunicorn --bind 0.0.0.0:8000 wsgi:app`
-
-POST http://localhost:8000/order
-
-`
-{
- "order": "1",
- "product": "Nike",
- "amount": 400
-}
-`
-
-Docker:
-
-`docker build -t <your-namespace>/order_app  .`
-
-`docker run -p 8000:8000 -e AWS_ACCESS_KEY=<your_aws_access_key> -e AWS_SECRET_ACCESS_KEY=<your_aws_secret_key> -e APP_TOPIC=<sns_topic> -e EPSAGON_KEY=<your_epsagon_key> --rm <your-namespace>/order_app`
+1. `pip install virtualenv`
+2. `virtualenv env --python=python3.7`
+3. `source env/bin/activate`
+4. `pip install -r requirements.txt`
+5. `AWS_ACCESS_KEY=<your_aws_access_key> AWS_SECRET_ACCESS_KEY=<your_aws_secret_key> APP_TOPIC=<sns_topic> EPSAGON_KEY=<your_epsagon_key> gunicorn --bind 0.0.0.0:8000 wsgi:app`
 
 POST http://localhost:8000/order
 
@@ -49,4 +45,38 @@ POST http://localhost:8000/order
  "amount": 400
 }
 `
+### Docker - Local - Gunicorn
 
+1. `docker build -t <your-repo>/order_app  .`
+2. `docker run -p 8000:8000 -e AWS_ACCESS_KEY=<your_aws_access_key> -e AWS_SECRET_ACCESS_KEY=<your_aws_secret_key> -e APP_TOPIC=<sns_topic> -e EPSAGON_KEY=<your_epsagon_key> --rm <your-repo>/order_app`
+
+POST http://<your_local_ip>:8000/order
+
+`
+{
+ "order": "1",
+ "product": "Nike",
+ "amount": 400
+}
+`
+
+### Docker - AWS - Gunicorn - Fargate (Use your own zone)
+
+1. Create a repository on AWS ECR (https://us-east-2.console.aws.amazon.com/ecr/get-started?region=us-east-2)
+2. Get authenticated against AWS $(aws ecr get-login --no-include-email --region us-east-2)
+3. `docker tag <your-repo>:order_app <owner_id>.dkr.ecr.us-east-2.amazonaws.com/<your_repo>:latest`
+4. `docker push <owner_id>.dkr.ecr.us-east-2.amazonaws.com/<your_repo>:order_app`
+5. Create a task definition and run it following https://epsagon.com/blog/deploying-java-spring-boot-on-aws-fargate/
+6. Hit the endpoint
+
+POST http://<AWS_FARGATE_IP>:8000/order
+
+`
+{
+ "order": "1",
+ "product": "Nike",
+ "amount": 400
+}
+`
+
+In all cases, you should see the payload sent to the endpoint on your email´s inbox.
